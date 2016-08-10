@@ -9,6 +9,8 @@ import android.location.LocationManager;
 import android.util.Base64;
 import android.util.Log;
 
+import com.goboomtown.btconnecthelp.view.BTConnectHelpButton;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -16,14 +18,20 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -39,10 +47,18 @@ import okhttp3.Response;
  */
 public class BTConnectAPI {
 
+    private static final String TAG = BTConnectAPI.class.getSimpleName();
+
     public static String BTConnectAPIBaseURL   =  "https://api.goboomtown.com";
     public static String kEndpoint             = "/api/v2";
 
     private static BTConnectAPI shared_instance = null;
+
+    public BTConnectHelpButton  helpButton;
+
+    public String	membersId;
+    public String	membersUsersId;
+    public String   membersLocationsId;
 
     private String  apiToken  = null;
     private String  apiSecret = null;
@@ -100,22 +116,77 @@ public class BTConnectAPI {
     }
 
 
+    public void cancelIssue() {
+        if ( helpButton != null )
+            helpButton.cancelIssue();
+    }
+
+
     public static JSONObject extractXmppInformation(String xmppData)
     {
         // example payload, as returned in {{xmpp_data}} from an api/v2 issue response.
         // payload is a base64 encoded string of the IV concatenated with the AES 256 encrypted JSON encoded payload.
-//        NSData *decodedData = [[NSData alloc] initWithBase64EncodedString:xmppData options:0];
-//
-//        // decode the JSON to obtain the original payload
-//        NSData *jsonData = [[self sharedInstance] AES256Decrypt:decodedData withKey:[self sharedInstance].apiSecret];
-//        NSString *jsonString = [[[[NSString alloc] initWithData:jsonData encoding:NSASCIIStringEncoding] stringByReplacingOccurrencesOfString:@"\t" withString:@""] stringByReplacingOccurrencesOfString:@"\0" withString:@""];
-//        jsonString = [jsonString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-//        jsonData = [jsonString dataUsingEncoding:NSUTF8StringEncoding];
-//        NSError *jsonError;
-//        NSDictionary *json = [NSJSONSerialization JSONObjectWithData:jsonData
-//        options:NSJSONReadingMutableContainers
-//        error:&jsonError];
+
+        try {
+            byte[] data = decrypt(sharedInstance().apiSecret, xmppData);
+            String response = new String(data);
+            return new JSONObject(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return new JSONObject();
+    }
+
+    /*
+    The PHP encryption code:
+
+        $key = substr(sprintf('%032s', $session->getPrivateKey()), 0, 32);
+        $result = mcrypt_encrypt(MCRYPT_RIJNDAEL_128, $key, json_encode($xmppData), MCRYPT_MODE_ECB);
+        if (!$result) {
+            $this->log->error('{}() Error encrypting issue xmpp packet (valid modes={}, valid algos={})', __FUNCTION__, mcrypt_list_modes(), mcrypt_list_algorithms());
+        }
+        else {
+            $item->xmpp_data = base64_encode($result);
+        }
+
+
+        $key = substr(sprintf('%032s', $session->getPrivateKey()), 0, 32);
+        $result = mcrypt_encrypt(MCRYPT_RIJNDAEL_128, $key, json_encode($xmppData), MCRYPT_MODE_ECB);
+        $item->xmpp_data = base64_encode($result);
+
+     */
+
+    private static byte[] encrypt(byte[] raw, byte[] clear) throws Exception {
+        SecretKeySpec skeySpec = new SecretKeySpec(raw, "AES");
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
+        byte[] encrypted = cipher.doFinal(clear);
+        return encrypted;
+    }
+
+    private static byte[] decrypt(String key, String data) throws Exception {
+        byte[] keyBytes = new byte[32];
+        try {
+            System.arraycopy(key.getBytes("UTF-8"), 0, keyBytes, 0, keyBytes.length);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        byte[] encrypted = Base64.decode(data, Base64.NO_WRAP);
+        SecretKeySpec skeySpec = new SecretKeySpec(keyBytes, "AES");
+        Cipher cipher = Cipher.getInstance("AES/ECB/ZeroBytePadding");
+        cipher.init(Cipher.DECRYPT_MODE, skeySpec);
+        byte[] decrypted = cipher.doFinal(encrypted);
+        return decrypted;
+    }
+
+    private static byte[] getKey(String keyString) {
+        byte[] keyBytes = new byte[32];
+        try {
+            System.arraycopy(keyString.getBytes("UTF-8"), 0, keyBytes, 0, keyBytes.length);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return keyBytes;
     }
 
     private static final int DEFAULT_TIMEOUT = 30;	// 30 seconds
@@ -178,6 +249,41 @@ public class BTConnectAPI {
 
         Calendar c = Calendar.getInstance();
         return dateFormat.format(c.getTime());
+    }
+
+
+    public static JSONObject successJSONObject(String response){
+        JSONObject result = null;
+        try {
+            JSONObject object = new JSONObject(response);
+            if( object instanceof JSONObject ){
+                boolean success = object.optBoolean("success");
+                if( success == true ){
+                    result = object;
+                }
+                Log.d(TAG, "JSON RESULT: " + object.toString());
+            }
+        } catch (JSONException e) {
+            Log.d(TAG, e.getMessage());
+        } catch (Exception ex1) {
+            Log.d(TAG, ex1.getMessage());
+        }
+        return result;
+    }
+
+    public static String failureMessageFromJSONData(String response) {
+        String message = null;
+        try {
+            JSONObject object = new JSONObject(response);
+            if( object instanceof JSONObject ){
+                message = object.optString("message");
+            }
+        } catch (JSONException e) {
+            Log.d(TAG, e.getMessage());
+        } catch (Exception ex1) {
+            Log.d(TAG, ex1.getMessage());
+        }
+        return message;
     }
 
 

@@ -25,7 +25,9 @@ import android.widget.TextView;
 
 import com.goboomtown.btconnecthelp.R;
 import com.goboomtown.btconnecthelp.R.*;
+import com.goboomtown.btconnecthelp.activity.ChatFragment;
 import com.goboomtown.btconnecthelp.api.BTConnectAPI;
+import com.goboomtown.btconnecthelp.model.BTConnectIssue;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -65,6 +67,8 @@ public class BTConnectHelpButton extends View {
     public interface BTConnectHelpButtonListener {
         public void helpButtonDidFailWithError(String description, String reason);
         public void helpButtonDidSetCredentials();
+        public void helpButtonDisplayChatFragment(ChatFragment chatFragment);
+        public void helpButtonRemoveChatFragment();
     }
 
     private BTConnectHelpButtonListener mListener;
@@ -128,7 +132,10 @@ public class BTConnectHelpButton extends View {
 
     public void setCredentials(String token, String secret)
     {
+        BTConnectAPI.sharedInstance().helpButton = this;
+
         BTConnectAPI.setCredentials(token, secret);
+
 
         if ( memberID==null || memberUserID==null ||  memberLocationID==null )
         {
@@ -143,6 +150,10 @@ public class BTConnectHelpButton extends View {
 //            userInfo:userInfo];
 //            [self.delegate helpButton:self didFailWithError:error];
         }
+
+        BTConnectAPI.sharedInstance().membersId             = memberID;
+        BTConnectAPI.sharedInstance().membersUsersId        = memberUserID;
+        BTConnectAPI.sharedInstance().membersLocationsId    = memberLocationID;
 
         int versionCode     = BuildConfig.VERSION_CODE;
         String versionName  = BuildConfig.VERSION_NAME;
@@ -355,6 +366,7 @@ public class BTConnectHelpButton extends View {
                         sendEmail();
                         break;
                     case 3:
+                        phone();
                         break;
                     case 4:
                         dialog.dismiss();
@@ -410,6 +422,11 @@ public class BTConnectHelpButton extends View {
         }
     }
 
+    public void cancelIssue() {
+        if ( mListener != null )
+            mListener.helpButtonRemoveChatFragment();
+    }
+
     private void createIssue(String members_id, String members_users_id, String members_locations_id)
     {
         String clientAppIdentifier = clientAppIdentifier();
@@ -441,13 +458,31 @@ public class BTConnectHelpButton extends View {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 boolean success = false;
+                BTConnectIssue issue = null;
 
-                JSONObject jsonObject = successJSONObject(response.body().string());
+                JSONObject jsonObject = BTConnectAPI.successJSONObject(response.body().string());
                 if (jsonObject instanceof JSONObject) {
                     JSONArray results = jsonObject.optJSONArray("results");
                     if ( results instanceof JSONArray && results.length()>0 )
                     {
                         Log.d(TAG, "onResponse");
+                        JSONObject issueJSON = null;
+                        try {
+                            issueJSON = results.getJSONObject(0);
+                            issue = new BTConnectIssue(issueJSON);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            success = true;
+                        }
+
+                        if ( issue != null ) {
+                            ChatFragment chatFragment = new ChatFragment();
+                            chatFragment.mIssue = issue;
+                            if (mListener != null) {
+                                mListener.helpButtonDisplayChatFragment(chatFragment);
+                            }
+                        }
+
 //                            self.chatViewController = [[ChatViewController alloc] init];
 //                            self.chatViewController.issue = [[BTConnectIssue alloc] initWithDictionary:results[0]];
 //
@@ -458,10 +493,7 @@ public class BTConnectHelpButton extends View {
                     }
                 }
 
-                if (success) {
-                    if ( mListener != null )
-                        mListener.helpButtonDidSetCredentials();
-                } else {
+                if ( !success ) {
                     if ( mListener != null )
                         mListener.helpButtonDidFailWithError("", "");
                 }
@@ -533,7 +565,7 @@ public class BTConnectHelpButton extends View {
                 boolean success = false;
 
                 try {
-                    JSONObject jsonObject = successJSONObject(response.body().string());
+                    JSONObject jsonObject = BTConnectAPI.successJSONObject(response.body().string());
                     if (jsonObject instanceof JSONObject) {
                         JSONArray resultsArray = jsonObject.optJSONArray("results");
                         if ( resultsArray instanceof JSONArray ) {
@@ -575,39 +607,6 @@ public class BTConnectHelpButton extends View {
          });
     }
 
-    public static JSONObject successJSONObject(String response){
-        JSONObject result = null;
-        try {
-            JSONObject object = new JSONObject(response);
-            if( object instanceof JSONObject ){
-                boolean success = object.optBoolean("success");
-                if( success == true ){
-                    result = object;
-                }
-                Log.d(TAG, "JSON RESULT: " + object.toString());
-            }
-        } catch (JSONException e) {
-            Log.d(TAG, e.getMessage());
-        } catch (Exception ex1) {
-            Log.d(TAG, ex1.getMessage());
-        }
-        return result;
-    }
-
-    public static String failureMessageFromJSONData(String response) {
-        String message = null;
-        try {
-            JSONObject object = new JSONObject(response);
-            if( object instanceof JSONObject ){
-                message = object.optString("message");
-            }
-        } catch (JSONException e) {
-            Log.d(TAG, e.getMessage());
-        } catch (Exception ex1) {
-            Log.d(TAG, ex1.getMessage());
-        }
-        return message;
-    }
 
 
 }
