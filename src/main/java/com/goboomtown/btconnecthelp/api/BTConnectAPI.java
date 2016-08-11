@@ -116,12 +116,6 @@ public class BTConnectAPI {
     }
 
 
-    public void cancelIssue() {
-        if ( helpButton != null )
-            helpButton.cancelIssue();
-    }
-
-
     public static JSONObject extractXmppInformation(String xmppData)
     {
         // example payload, as returned in {{xmpp_data}} from an api/v2 issue response.

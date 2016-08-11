@@ -57,6 +57,7 @@ import com.goboomtown.btconnecthelp.R;
 import com.goboomtown.btconnecthelp.api.BTConnectAPI;
 import com.goboomtown.btconnecthelp.model.BTConnectChat;
 import com.goboomtown.btconnecthelp.model.BTConnectIssue;
+import com.goboomtown.btconnecthelp.view.BTConnectHelpButton;
 import com.goboomtown.chat.BoomtownChat;
 import com.goboomtown.chat.BoomtownChatMessage;
 
@@ -95,6 +96,7 @@ public class ChatFragment extends Fragment {
     private String mParam1;
     private String mParam2;
 
+    public BTConnectHelpButton      mHelpButton     = null;
     public  BTConnectIssue          mIssue          = null;
     private String                  mCommId         = null;
     private Boolean                 mCommEntered    = false;
@@ -217,7 +219,8 @@ public class ChatFragment extends Fragment {
         mUploadRequested = false;
 
         String title = String.format("%s #%s", getString(R.string.ticket), mIssue.reference_num);
-        getActivity().setTitle(title);
+//        getActivity().setTitle(title);
+        mHelpButton.setChatTitle(title);
 
         mXmppInfo = BTConnectAPI.extractXmppInformation(mIssue.xmpp_data);
         if ( mXmppInfo != null )
@@ -864,7 +867,7 @@ public class ChatFragment extends Fragment {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            BTConnectAPI.sharedInstance().cancelIssue();
+                            mHelpButton.removeChat();
                         }
                     });
                 }

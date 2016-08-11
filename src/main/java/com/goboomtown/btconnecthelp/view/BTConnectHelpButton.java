@@ -63,12 +63,14 @@ public class BTConnectHelpButton extends View {
     private String  providerId;
     private String  microConnectVersion;
     private String  osVersion;
+    private Context mContext;
 
     public interface BTConnectHelpButtonListener {
         public void helpButtonDidFailWithError(String description, String reason);
         public void helpButtonDidSetCredentials();
         public void helpButtonDisplayChatFragment(ChatFragment chatFragment);
         public void helpButtonRemoveChatFragment();
+        public void helpButtonSetChatTitle(String title);
     }
 
     private BTConnectHelpButtonListener mListener;
@@ -112,16 +114,19 @@ public class BTConnectHelpButton extends View {
 
     public BTConnectHelpButton(Context context) {
         super(context);
+        mContext = context;
         init(null, 0);
     }
 
     public BTConnectHelpButton(Context context, AttributeSet attrs) {
         super(context, attrs);
+        mContext = context;
         init(attrs, 0);
     }
 
     public BTConnectHelpButton(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        mContext = context;
         init(attrs, defStyle);
     }
 
@@ -136,19 +141,14 @@ public class BTConnectHelpButton extends View {
 
         BTConnectAPI.setCredentials(token, secret);
 
-
         if ( memberID==null || memberUserID==null ||  memberLocationID==null )
         {
-//            SEL selector = NSSelectorFromString(@"helpButton:didFailWithError:");
-//            if ( self.delegate && [self.delegate respondsToSelector:selector]) {
-//            NSDictionary *userInfo = @{
-//                NSLocalizedDescriptionKey: NSLocalizedString(@"Unable to create issue", nil),
-//                NSLocalizedFailureReasonErrorKey: NSLocalizedString(@"Member information is missing or incomplete.", nil),
-//            };
-//            NSError *error = [NSError errorWithDomain:BTConnectHelpErrorDomain
-//            code:-1
-//            userInfo:userInfo];
-//            [self.delegate helpButton:self didFailWithError:error];
+            if ( mListener != null ) {
+                mListener.helpButtonDidFailWithError(
+                        mContext.getString(R.string.error_unable_to_create_issue),
+                        mContext.getString(string.reason_member_info_missing)
+                );
+            }
         }
 
         BTConnectAPI.sharedInstance().membersId             = memberID;
@@ -165,9 +165,30 @@ public class BTConnectHelpButton extends View {
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
-        osVersion           = String.format("Android %s (API %d)", Build.VERSION.RELEASE,Build.VERSION.SDK_INT);
+        osVersion = String.format("Android %s (API %d)", Build.VERSION.RELEASE,Build.VERSION.SDK_INT);
 
         getProvider();
+    }
+
+    private void displayChat(BTConnectIssue issue) {
+        ChatFragment chatFragment = new ChatFragment();
+        chatFragment.mIssue = issue;
+        chatFragment.mHelpButton = this;
+        if (mListener != null) {
+            mListener.helpButtonDisplayChatFragment(chatFragment);
+        }
+    }
+
+    public void setChatTitle(String title) {
+        if (mListener != null) {
+            mListener.helpButtonSetChatTitle(title);
+        }
+    }
+
+    public void removeChat() {
+        if ( mListener != null ) {
+            mListener.helpButtonRemoveChatFragment();
+        }
     }
 
 
@@ -176,6 +197,7 @@ public class BTConnectHelpButton extends View {
         //  microConnect 1.11, iOS 9.7.1 [ABC-123]
         return String.format("%s %s, %s", BTConnectHelpName, microConnectVersion, osVersion);
     }
+
 
     private void init(AttributeSet attrs, int defStyle) {
         setOnClickListener(new OnClickListener() {
@@ -349,7 +371,6 @@ public class BTConnectHelpButton extends View {
     private void showHelpDialog()
     {
         final CharSequence[] items = { "Chat with Us", "Web Support", "Email Support", "Phone Support", "Cancel" };
-//        CharSequence[] items = getResources().getStringArray(R.stri)
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle("Select");
         builder.setItems(items, new DialogInterface.OnClickListener() {
@@ -394,15 +415,6 @@ public class BTConnectHelpButton extends View {
 
         Intent emailIntent = new Intent(Intent.ACTION_SEND);
         emailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{ supportEmailAddress});
-//        emailIntent.putExtra(Intent.EXTRA_SUBJECT, emailSubject);
-//        emailIntent.putExtra(Intent.EXTRA_TEXT, emailContent);
-        /// use below 2 commented lines if need to use BCC an CC feature in email
-        //emailIntent.putExtra(Intent.EXTRA_CC, new String[]{ to});
-        //emailIntent.putExtra(Intent.EXTRA_BCC, new String[]{to});
-        ////use below 3 commented lines if need to send attachment
-//        emailIntent .setType("image/jpeg");
-//        emailIntent .putExtra(Intent.EXTRA_SUBJECT, "My Picture");
-//        emailIntent .putExtra(Intent.EXTRA_STREAM, Uri.parse("file://sdcard/captureimage.png"));
 
         //need this to prompts email client only
         emailIntent.setType("message/rfc822");
@@ -422,21 +434,16 @@ public class BTConnectHelpButton extends View {
         }
     }
 
-    public void cancelIssue() {
-        if ( mListener != null )
-            mListener.helpButtonRemoveChatFragment();
-    }
 
-    private void createIssue(String members_id, String members_users_id, String members_locations_id)
-    {
+    private void createIssue(String members_id, String members_users_id, String members_locations_id) {
         String clientAppIdentifier = clientAppIdentifier();
-        JSONObject  params      = new JSONObject();
-        JSONObject  issuesJSON  = new JSONObject();
+        JSONObject params = new JSONObject();
+        JSONObject issuesJSON = new JSONObject();
         try {
-            issuesJSON.put("members_id",            members_id);
-            issuesJSON.put("members_users_id",      members_users_id);
-            issuesJSON.put("members_locations_id",  members_locations_id);
-            issuesJSON.put("user_agent",            clientAppIdentifier);
+            issuesJSON.put("members_id", members_id);
+            issuesJSON.put("members_users_id", members_users_id);
+            issuesJSON.put("members_locations_id", members_locations_id);
+            issuesJSON.put("user_agent", clientAppIdentifier);
 
             params.put("issues", issuesJSON);
         } catch (JSONException e) {
@@ -449,105 +456,46 @@ public class BTConnectHelpButton extends View {
 
             @Override
             public void onFailure(Call call, IOException e) {
-//                        NSLocalizedDescriptionKey: NSLocalizedString(@"Unable to create issue", nil),
-//                        NSLocalizedFailureReasonErrorKey: NSLocalizedString([response objectForKey:@"message"], nil),
-                if ( mListener != null )
-                    mListener.helpButtonDidFailWithError("Unable to create issue", "");
+                if (mListener != null) {
+                    mListener.helpButtonDidFailWithError("Unable to create issue", e.getLocalizedMessage());
+                }
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 boolean success = false;
                 BTConnectIssue issue = null;
+                String message = "";
 
                 JSONObject jsonObject = BTConnectAPI.successJSONObject(response.body().string());
                 if (jsonObject instanceof JSONObject) {
                     JSONArray results = jsonObject.optJSONArray("results");
-                    if ( results instanceof JSONArray && results.length()>0 )
-                    {
+                    if (results instanceof JSONArray && results.length() > 0) {
                         Log.d(TAG, "onResponse");
                         JSONObject issueJSON = null;
                         try {
                             issueJSON = results.getJSONObject(0);
                             issue = new BTConnectIssue(issueJSON);
+                            success = true;
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            success = true;
                         }
 
-                        if ( issue != null ) {
-                            ChatFragment chatFragment = new ChatFragment();
-                            chatFragment.mIssue = issue;
-                            if (mListener != null) {
-                                mListener.helpButtonDisplayChatFragment(chatFragment);
-                            }
+                        if (issue != null) {
+                            displayChat(issue);
                         }
-
-//                            self.chatViewController = [[ChatViewController alloc] init];
-//                            self.chatViewController.issue = [[BTConnectIssue alloc] initWithDictionary:results[0]];
-//
-//                            SEL selector = NSSelectorFromString(@"helpButton:displayIssueViewController:");
-//                            if ( self.delegate && [self.delegate respondsToSelector:selector]) {
-//                                [self.delegate helpButton:self displayIssueViewController:self.chatViewController];
-//                            }
                     }
                 }
 
-                if ( !success ) {
-                    if ( mListener != null )
-                        mListener.helpButtonDidFailWithError("", "");
+                if (!success) {
+                    if (mListener != null) {
+                        mListener.helpButtonDidFailWithError(mContext.getString(R.string.error_unable_to_create_issue), message);
+                    }
                 }
             }
         });
-
-//        [BTConnectAPI executePost:@"/issues/create"
-//        parameters:parameters
-//        completion:^(NSDictionary *response)
-//        {
-//            dispatch_async(dispatch_get_main_queue(), ^{
-//                    [SVProgressHUD dismiss];
-//            });
-//            if ( [response isKindOfClass:[NSDictionary class]] )
-//            {
-//                NSNumber *status  = [response objectForKey:@"status"];
-//                NSNumber *success = [response objectForKey:@"success"];
-//                if ( (status!=nil && [status intValue]!=200) || (success!=nil && [success boolValue]==NO) )
-//                {
-//                    SEL selector = NSSelectorFromString(@"helpButton:didFailWithError:");
-//                    if ( self.delegate && [self.delegate respondsToSelector:selector]) {
-//                    NSDictionary *userInfo = @{
-//                        NSLocalizedDescriptionKey: NSLocalizedString(@"Unable to create issue", nil),
-//                        NSLocalizedFailureReasonErrorKey: NSLocalizedString([response objectForKey:@"message"], nil),
-//                    };
-//                    NSError *error = [NSError errorWithDomain:BTConnectHelpErrorDomain
-//                    code:-1
-//                    userInfo:userInfo];
-//                    [self.delegate helpButton:self didFailWithError:error];
-//                }
-//                }
-//                else
-//                {
-//                    NSArray *results = [response objectForKey:@"results"];
-//                    if ( [results isKindOfClass:[NSArray class]] && results.count>0 )
-//                    {
-//                        self.chatViewController = [[ChatViewController alloc] init];
-//                        self.chatViewController.issue = [[BTConnectIssue alloc] initWithDictionary:results[0]];
-//
-//                        SEL selector = NSSelectorFromString(@"helpButton:displayIssueViewController:");
-//                        if ( self.delegate && [self.delegate respondsToSelector:selector]) {
-//                        [self.delegate helpButton:self displayIssueViewController:self.chatViewController];
-//                    }
-//                    }
-//                }
-//            }
-//        }];
     }
 
-    /**
-     * Example of fetching a provider, and dumping key information associated with the provider.
-     *
-     * @throws ApiException On API call failure
-     */
      private void getProvider()
      {
          String uri = String.format("%s/providers/get", BTConnectAPI.kEndpoint);
@@ -557,12 +505,13 @@ public class BTConnectHelpButton extends View {
             @Override
             public void onFailure(Call call, IOException e) {
                 if ( mListener != null )
-                    mListener.helpButtonDidFailWithError("", "");
+                    mListener.helpButtonDidFailWithError(mContext.getString(string.error_unable_to_get_provider_info), e.getLocalizedMessage());
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 boolean success = false;
+                String message = "";
 
                 try {
                     JSONObject jsonObject = BTConnectAPI.successJSONObject(response.body().string());
@@ -572,6 +521,7 @@ public class BTConnectHelpButton extends View {
                             JSONObject provider = resultsArray.optJSONObject(0);
                             if ( provider instanceof JSONObject )
                             {
+                                success = true;
                                 providerId = provider.optString("id");
                                 if ( provider.has("website") ) {
                                     try {
@@ -591,6 +541,8 @@ public class BTConnectHelpButton extends View {
                                 }
                             }
                         }
+                    } else {
+                        message = jsonObject.optString("message");
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -601,7 +553,7 @@ public class BTConnectHelpButton extends View {
                         mListener.helpButtonDidSetCredentials();
                 } else {
                     if ( mListener != null )
-                        mListener.helpButtonDidFailWithError("", "");
+                        mListener.helpButtonDidFailWithError(mContext.getString(string.error_unable_to_get_provider_info), message);
                 }
             }
          });
