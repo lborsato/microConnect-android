@@ -60,8 +60,10 @@ From the Help view, the user may tap the buttons for chat, web, e-mail, or phone
 _Note:_ An example may be found in the `Example` folder of this repository
 
 ### Sample XML Layout
-```<?xml version="1.0" encoding="utf-8"?>
-   <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+```
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
        xmlns:tools="http://schemas.android.com/tools"
        android:layout_width="match_parent"
        android:layout_height="match_parent"
