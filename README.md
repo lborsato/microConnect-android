@@ -120,6 +120,6 @@ _Note:_ An example may be found in the `Example` folder of this repository
 
 
 [connectLink]:http://www.goboomtown.com/connect/
-[imgLinkChatView]:https://raw.githubusercontent.com/goboomtown/microConnect-ios/master/Examples/Images/Connect%20Chat%20View.png
-[imgLinkHelpView]:https://raw.githubusercontent.com/goboomtown/microConnect-ios/master/Examples/Images/Connect%20Help%20View.png
-[imgLinkInitialView]:https://raw.githubusercontent.com/goboomtown/microConnect-ios/master/Examples/Images/Sample%20Initial%20View.png
+[imgLinkChatView]:https://raw.githubusercontent.com/goboomtown/microConnect-android/master/Examples/Images/Connect%20Chat%20View.png
+[imgLinkHelpView]:https://raw.githubusercontent.com/goboomtown/microConnect-android/master/Examples/Images/Connect%20Help%20View.png
+[imgLinkInitialView]:https://raw.githubusercontent.com/goboomtown/microConnect-android/master/Examples/Images/Sample%20Initial%20View.png
