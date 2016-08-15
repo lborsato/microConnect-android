@@ -99,20 +99,21 @@ _Note:_ An example may be found in the `Example` folder of this repository
 ```
 
 ### Sample Java code
-```        mHelpButton         = (BTConnectHelpButton) findViewById(R.id.helpButton);
-           mFragmentContainer  = (FrameLayout)         findViewById(R.id.fragment_container);
+```
+mHelpButton         = (BTConnectHelpButton) findViewById(R.id.helpButton);
+mFragmentContainer  = (FrameLayout)         findViewById(R.id.fragment_container);
    
-           mHelpButton.setListener(this);
+mHelpButton.setListener(this);
    
-           mHelpButton.memberID 			= "WA3QMJ";
-           mHelpButton.memberUserID 		= "WA3QMJ-5XK"; //@"WA3QMJ-2QE";
-           mHelpButton.memberLocationID 	= "WA3QMJ-FYH"; //@"WA3QMJ-JVE";
+mHelpButton.memberID 			= "WA3QMJ";
+mHelpButton.memberUserID 		= "WA3QMJ-5XK"; //@"WA3QMJ-2QE";
+mHelpButton.memberLocationID 	= "WA3QMJ-FYH"; //@"WA3QMJ-JVE";
    
-           mHelpButton.supportWebsiteURL 	= Uri.parse("http://example.com");
-           mHelpButton.supportEmailAddress  = "support@example.com";
-           mHelpButton.supportPhoneNumber 	= "1-888-555-2368";
+mHelpButton.supportWebsiteURL 	= Uri.parse("http://example.com");
+mHelpButton.supportEmailAddress  = "support@example.com";
+mHelpButton.supportPhoneNumber 	= "1-888-555-2368";
    
-           mHelpButton.setCredentials("31211E2CC0A30F98ABBD","0a46f159dc5a846d3fa7cf7024adb2248a8bc8ed");
+mHelpButton.setCredentials("31211E2CC0A30F98ABBD","0a46f159dc5a846d3fa7cf7024adb2248a8bc8ed");
 
 ```
 
