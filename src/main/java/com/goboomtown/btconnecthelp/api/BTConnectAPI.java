@@ -63,20 +63,6 @@ public class BTConnectAPI {
     private String  apiToken  = null;
     private String  apiSecret = null;
 
-//    private static final Mac sha256_HMAC;
-//    static {
-//        try {
-//            sha256_HMAC = Mac.getInstance("HmacSHA256");
-//            sha256_HMAC.init(new javax.crypto.spec.SecretKeySpec(sharedInstance().apiSecret.getBytes("UTF-8"), "HmacSHA256"));
-//        } catch (InvalidKeyException e) {
-//            throw new ExceptionInInitializerError(e);
-//        } catch (NoSuchAlgorithmException e) {
-//            throw new ExceptionInInitializerError(e);
-//        } catch (UnsupportedEncodingException e) {
-//            throw new ExceptionInInitializerError(e);
-//        }
-//    }
-
     private static String encode(String data) throws Exception {
         Mac sha256_HMAC = null;
         String signature = null;
@@ -116,76 +102,11 @@ public class BTConnectAPI {
     }
 
 
-    public static JSONObject extractXmppInformation(String xmppData)
-    {
-        // example payload, as returned in {{xmpp_data}} from an api/v2 issue response.
-        // payload is a base64 encoded string of the IV concatenated with the AES 256 encrypted JSON encoded payload.
-
-        try {
-            byte[] data = decrypt(sharedInstance().apiSecret, xmppData);
-            String response = new String(data);
-            return new JSONObject(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return new JSONObject();
-    }
-
-    /*
-    The PHP encryption code:
-
-        $key = substr(sprintf('%032s', $session->getPrivateKey()), 0, 32);
-        $result = mcrypt_encrypt(MCRYPT_RIJNDAEL_128, $key, json_encode($xmppData), MCRYPT_MODE_ECB);
-        if (!$result) {
-            $this->log->error('{}() Error encrypting issue xmpp packet (valid modes={}, valid algos={})', __FUNCTION__, mcrypt_list_modes(), mcrypt_list_algorithms());
-        }
-        else {
-            $item->xmpp_data = base64_encode($result);
-        }
-
-
-        $key = substr(sprintf('%032s', $session->getPrivateKey()), 0, 32);
-        $result = mcrypt_encrypt(MCRYPT_RIJNDAEL_128, $key, json_encode($xmppData), MCRYPT_MODE_ECB);
-        $item->xmpp_data = base64_encode($result);
-
-     */
-
-    private static byte[] encrypt(byte[] raw, byte[] clear) throws Exception {
-        SecretKeySpec skeySpec = new SecretKeySpec(raw, "AES");
-        Cipher cipher = Cipher.getInstance("AES");
-        cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
-        byte[] encrypted = cipher.doFinal(clear);
-        return encrypted;
-    }
-
-    private static byte[] decrypt(String key, String data) throws Exception {
-        byte[] keyBytes = new byte[32];
-        try {
-            System.arraycopy(key.getBytes("UTF-8"), 0, keyBytes, 0, keyBytes.length);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        byte[] encrypted = Base64.decode(data, Base64.NO_WRAP);
-        SecretKeySpec skeySpec = new SecretKeySpec(keyBytes, "AES");
-        Cipher cipher = Cipher.getInstance("AES/ECB/ZeroBytePadding");
-        cipher.init(Cipher.DECRYPT_MODE, skeySpec);
-        byte[] decrypted = cipher.doFinal(encrypted);
-        return decrypted;
-    }
-
-    private static byte[] getKey(String keyString) {
-        byte[] keyBytes = new byte[32];
-        try {
-            System.arraycopy(keyString.getBytes("UTF-8"), 0, keyBytes, 0, keyBytes.length);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        return keyBytes;
+    public String getKey() {
+        return apiSecret;
     }
 
     private static final int DEFAULT_TIMEOUT = 30;	// 30 seconds
-
-//	private static final OkHttpClient client = new OkHttpClient();
 
     private static final OkHttpClient client = new OkHttpClient.Builder()
             .connectTimeout(60, TimeUnit.SECONDS)
@@ -201,7 +122,6 @@ public class BTConnectAPI {
                 .post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), jsonParams.toString()))
                 .build();
 
-//		Log.d("RestClient", "POST " + requestUrl);
         client.newCall(request).enqueue(callback);
     }
 
@@ -211,8 +131,6 @@ public class BTConnectAPI {
                 .url(requestUrl)
                 .headers(Headers.of(addHeaders(uri)))
                 .build();
-
-//		Log.d("RestClient", "GET " + requestUrl);
 
         client.newCall(request).enqueue(callback);
     }

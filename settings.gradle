@@ -1,0 +1,2 @@
+include ':microConnect-android', ':boomtown-boomtownchat-android'
+project(":boomtown-boomtownchat-android").projectDir = new File(settingsDir, "../microConnect-android/modules/boomtown-boomtownchat-android")

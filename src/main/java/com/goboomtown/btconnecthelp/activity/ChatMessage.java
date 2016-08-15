@@ -1,7 +1,7 @@
 package com.goboomtown.btconnecthelp.activity;
 
 /**
- * Created by Technovibe on 17-04-2015.
+ * Created by Larry Borsato on 2016-07-12.
  */
 public class ChatMessage {
     private long id;

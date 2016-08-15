@@ -8,6 +8,7 @@
     <string name="connecting_to_chat_server">Connecting to chat server</string>
     <string name="joining_room">Joining room</string>
     <string name="cancelling_issue">Cancelling issue</string>
+    <string name="get_video_chat_help">Get video chat help with Connect!</string>
     
     <string name="error_unable_to_create_issue">Unable to create issue</string>
     <string name="reason_member_info_missing">Member information is missing or incomplete.</string>

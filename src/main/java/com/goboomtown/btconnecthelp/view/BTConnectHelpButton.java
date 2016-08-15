@@ -135,10 +135,13 @@ public class BTConnectHelpButton extends View {
         showHelpDialog();
     }
 
+    /**
+     * Set credentials for API requests
+     * @param token     the API token provided by Boomtown
+     * @param secret    the API secret provided by Boomtown
+     */
     public void setCredentials(String token, String secret)
     {
-        BTConnectAPI.sharedInstance().helpButton = this;
-
         BTConnectAPI.setCredentials(token, secret);
 
         if ( memberID==null || memberUserID==null ||  memberLocationID==null )

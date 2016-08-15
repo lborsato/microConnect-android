@@ -79,6 +79,10 @@ import okhttp3.Callback;
 import okhttp3.Response;
 
 /**
+ * Created by Larry Borsato on 2016-07-12.
+ */
+
+/**
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment must implement the
  * {@link ChatFragment.OnFragmentInteractionListener} interface
@@ -160,6 +164,7 @@ public class ChatFragment extends Fragment {
     private RelativeLayout webViewFrame = null;
     public MenuItem    mMenuItemActionDone;
 
+    private Button  mBtnGetVideoChatHelp;
 
     public Boolean      mInRoom;
 
@@ -222,7 +227,19 @@ public class ChatFragment extends Fragment {
 //        getActivity().setTitle(title);
         mHelpButton.setChatTitle(title);
 
-        mXmppInfo = BTConnectAPI.extractXmppInformation(mIssue.xmpp_data);
+        mBtnGetVideoChatHelp = (Button) view.findViewById(R.id.btn_get_video_chat_help);
+        mBtnGetVideoChatHelp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String url = String.format("goboomtownconnect://prod/member/issue/read?issue_id=%s", mIssue.id);
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                getContext().startActivity(intent);
+
+            }
+        });
+
+//        mXmppInfo = BTConnectAPI.extractXmppInformation(mIssue.xmpp_data);
+        mXmppInfo = BoomtownChat.extractXmppInformation(mIssue.xmpp_data, BTConnectAPI.sharedInstance().getKey());
         if ( mXmppInfo != null )
         {
             setXmppInfo(mXmppInfo);

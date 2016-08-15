@@ -23,6 +23,12 @@ android:layout_height="match_parent"
 android:background="@android:color/white"
 android:padding="10dp">
 
+    <Button
+        android:id="@+id/btn_get_video_chat_help"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/get_video_chat_help" />
+
     <LinearLayout
         android:id="@+id/panelInfo"
         android:layout_width="match_parent"
